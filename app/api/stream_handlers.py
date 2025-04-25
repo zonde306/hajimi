@@ -216,7 +216,7 @@ async def process_stream_request(
                             "object": "chat.completion.chunk",
                             "created": int(time.time()),
                             "model": chat_request.model,
-                            "choices": [{"delta": {"role": "assistant", "content": chunk.replace('♩', '')}, "index": 0, "finish_reason": None}]
+                            "choices": [{"delta": {"role": "assistant", "content": chunk}, "index": 0, "finish_reason": None}]
                         }
                         yield f"data: {json.dumps(formatted_chunk)}\n\n"
                     else:
