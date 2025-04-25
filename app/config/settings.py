@@ -11,6 +11,8 @@ BASE_DIR = pathlib.Path(__file__).parent.parent
 FAKE_STREAMING = os.environ.get("FAKE_STREAMING", "true").lower() in ["true", "1", "yes"]
 # 假流式请求的空内容返回间隔（秒）
 FAKE_STREAMING_INTERVAL = float(os.environ.get("FAKE_STREAMING_INTERVAL", "1"))
+#加密模式
+ENCRYPT_MODE = os.environ.get("ENCRYPT_MODE", "false").lower() in ["true", "1", "yes"]
 
 # 空响应重试次数限制
 MAX_EMPTY_RESPONSES = int(os.environ.get("MAX_EMPTY_RESPONSES", "5"))  # 默认最多允许5次空响应
