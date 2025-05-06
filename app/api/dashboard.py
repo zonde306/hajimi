@@ -526,3 +526,30 @@ def start_api_key_test_in_thread(keys):
             "is_running": False,
             "is_completed": True
         })
+
+# 重新添加获取每日统计数据的API端点
+@dashboard_router.get("/daily-stats")
+async def get_daily_stats():
+    """获取每日调用统计数据的API端点"""
+    try:
+        # 获取每日调用统计数据
+        daily_stats = api_stats_manager.get_daily_stats(15)
+        
+        # 记录获取的数据，便于调试
+        if daily_stats:
+            total_calls = sum(stat["calls"] for stat in daily_stats)
+            total_tokens = sum(stat["tokens"] for stat in daily_stats)
+            log('info', f"获取每日统计数据: {len(daily_stats)}天, 总调用: {total_calls}, 总Token: {total_tokens}")
+        else:
+            log('warning', "获取每日统计数据: 未找到任何统计数据")
+        
+        return {
+            "daily_stats": daily_stats
+        }
+    except Exception as e:
+        log('error', f"获取每日统计数据时出错: {str(e)}")
+        # 即使出错也返回空数组而不是抛出异常，确保前端不会崩溃
+        return {
+            "daily_stats": [],
+            "error": str(e)
+        }
