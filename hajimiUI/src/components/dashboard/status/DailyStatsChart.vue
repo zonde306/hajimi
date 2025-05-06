@@ -119,7 +119,7 @@ export default {
       // 定时刷新数据
       const refreshInterval = setInterval(() => {
         fetchDailyStats()
-      }, 60000) // 每分钟刷新一次
+      }, 30000) // 从60000毫秒(60秒)改为30000毫秒(30秒)
       
       // 组件卸载时清除定时器
       return () => clearInterval(refreshInterval)

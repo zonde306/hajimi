@@ -452,7 +452,10 @@ class ApiStatsManager:
         return stats
     
     async def reset(self):
-        """重置所有统计数据"""
+        """重置所有统计数据，但保留每日统计数据"""
+        # 在重置前保存当前的每日统计数据到永久存储
+        self._save_daily_stats()
+        
         with self._counters_lock:
             self.api_key_counts.clear()
             self.model_counts.clear()
@@ -468,11 +471,9 @@ class ApiStatsManager:
         with self._recent_calls_lock:
             self.recent_calls.clear()
         
-        with self._daily_stats_lock:
-            self.daily_stats.clear()
-            # 保留永久统计数据，但不清除
-            
-        log('info', "API调用统计数据已重置")
+        # 不再清除daily_stats数据
+        # 但记录一条日志说明此次重置没有影响每日统计
+        log('info', "API调用统计数据已重置，但保留了每日统计数据")
     
     def _get_minute_timestamp(self, dt):
         """将日期时间对象转换为分钟级别的时间戳字符串"""

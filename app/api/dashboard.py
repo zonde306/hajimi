@@ -532,8 +532,37 @@ def start_api_key_test_in_thread(keys):
 async def get_daily_stats():
     """获取每日调用统计数据的API端点"""
     try:
-        # 获取每日调用统计数据
+        # 触发一次保存以确保数据持久化
+        api_stats_manager._save_daily_stats()
+        
+        # 获取持久化的每日统计数据
         daily_stats = api_stats_manager.get_daily_stats(15)
+        
+        # 获取当前内存中的数据并合并
+        today = datetime.now().strftime("%Y-%m-%d")
+        today_memory_stats = None
+        
+        # 使用锁安全地访问内存数据
+        with api_stats_manager._daily_stats_lock:
+            if today in api_stats_manager.daily_stats:
+                today_memory_stats = api_stats_manager.daily_stats[today].copy()
+        
+        # 合并内存中的数据到结果中
+        if today_memory_stats:
+            # 查找结果中是否已有今天的数据
+            today_index = next((i for i, stat in enumerate(daily_stats) if stat["date"] == today), None)
+            
+            if today_index is not None:
+                # 合并数据
+                daily_stats[today_index]["calls"] += today_memory_stats["calls"]
+                daily_stats[today_index]["tokens"] += today_memory_stats["tokens"]
+            else:
+                # 添加今天的数据
+                daily_stats.insert(0, {
+                    "date": today,
+                    "calls": today_memory_stats["calls"],
+                    "tokens": today_memory_stats["tokens"]
+                })
         
         # 记录获取的数据，便于调试
         if daily_stats:
