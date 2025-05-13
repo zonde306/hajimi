@@ -6,24 +6,14 @@ echo ===================================
 echo Welcome to Hajimi Auto Setup
 echo ===================================
 
-:: Load environment variables
-echo Loading environment variables...
-if exist ".env" (
-    for /f "tokens=1,2 delims==" %%a in (.env) do (
-        set "%%a=%%b"
-        echo Loaded: %%a
-    )
-    echo Environment variables loaded successfully!
-) else (
-    echo Warning: .env file not found
-)
-
 :: Set variables
 set PYTHON_VERSION=3.12.3
 set PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VERSION%/python-%PYTHON_VERSION%-embed-amd64.zip
 set PYTHON_ZIP=python-%PYTHON_VERSION%-embed-amd64.zip
 set PYTHON_DIR=%~dp0python
 set GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
+
+:: Add Python to PATH at the beginning to ensure it's used
 set PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PATH%
 
 :: Check if Python is already installed
@@ -51,33 +41,90 @@ if exist "%PYTHON_DIR%\python.exe" (
     echo Python and pip installation complete!
 )
 
-:: Check if dependencies need to be installed
-if not exist "%~dp0.venv" (
-    echo Creating virtual environment...
-    "%PYTHON_DIR%\python.exe" -m venv "%~dp0.venv"
-    
-    echo Installing project dependencies...
-    call "%~dp0.venv\Scripts\activate.bat"
-    python -m pip install --upgrade pip
-    
-    echo Installing uv accelerator...
-    pip install nv
-    
-    echo Using uv to install dependencies...
-    nv use uv
-    uv pip install -r requirements.txt
-    
-    echo Dependencies installation complete!
-) else (
-    echo Virtual environment exists, activating...
-    call "%~dp0.venv\Scripts\activate.bat"
+:: Verify Python installation
+echo Verifying Python installation...
+"%PYTHON_DIR%\python.exe" --version
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Python installation failed or not accessible.
+    goto :error
 )
+
+:: Ensure Python Scripts directory exists in PATH
+if not exist "%PYTHON_DIR%\Scripts" (
+    echo Creating Scripts directory...
+    mkdir "%PYTHON_DIR%\Scripts"
+)
+
+:: Create site-packages directory if it doesn't exist
+if not exist "%PYTHON_DIR%\Lib\site-packages" (
+    echo Creating site-packages directory...
+    mkdir "%PYTHON_DIR%\Lib\site-packages"
+)
+
+:: Load environment variables
+echo Loading environment variables...
+if exist ".env" (
+    for /f "tokens=1,2 delims==" %%a in (.env) do (
+        set "%%a=%%b"
+        echo Loaded: %%a
+    )
+    echo Environment variables loaded successfully!
+) else (
+    echo Warning: .env file not found
+)
+
+:: Check if requirements.txt exists
+if not exist "requirements.txt" (
+    echo Creating requirements.txt file...
+    (
+        echo fastapi==0.104.1
+        echo uvicorn==0.23.2
+        echo pydantic==2.4.2
+        echo starlette==0.27.0
+        echo python-multipart==0.0.6
+        echo jinja2==3.1.2
+    ) > requirements.txt
+    echo Created requirements.txt with basic dependencies.
+)
+
+:: Install dependencies directly in the embedded Python
+echo Installing dependencies...
+
+:: Upgrade pip first
+echo Upgrading pip...
+"%PYTHON_DIR%\python.exe" -m pip install --upgrade pip
+
+:: Install key packages directly first
+echo Installing key packages...
+"%PYTHON_DIR%\python.exe" -m pip install fastapi uvicorn
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Failed to install key packages.
+    goto :error
+)
+
+:: Install all dependencies
+echo Installing all dependencies from requirements.txt...
+"%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Failed to install all dependencies.
+    goto :error
+)
+
+:: Verify installation
+echo Verifying package installation...
+"%PYTHON_DIR%\python.exe" -c "import fastapi; import uvicorn; print('Packages verified!')"
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Package installation failed.
+    goto :error
+)
+
+echo All dependencies installed successfully!
 
 :: Start the application with delayed browser launch
 echo Starting Hajimi application...
 
-:: Start the application in a separate process and capture its PID
-start /b cmd /c "uvicorn app.main:app --host 0.0.0.0 --port 7860"
+:: Start the application in a separate process
+start /b cmd /c "%PYTHON_DIR%\python.exe" -m uvicorn app.main:app --host 0.0.0.0 --port 7860
 
 :: Wait for the server to initialize (5 seconds)
 echo Waiting for server to initialize...
@@ -91,4 +138,12 @@ start "" http://127.0.0.1:7860
 echo.
 echo Press Ctrl+C to stop the server when finished.
 pause > nul
+goto :end
+
+:error
+echo.
+echo An error occurred during setup. Please check the messages above.
+pause > nul
+
+:end
 endlocal
