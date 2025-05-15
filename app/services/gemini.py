@@ -8,13 +8,13 @@ import httpx
 import secrets
 import string
 import app.config.settings as settings
-
+import faker
 from app.utils.logging import log
 
-def generate_secure_random_string(length):
-    all_characters = string.ascii_letters + string.digits
-    secure_random_string = ''.join(secrets.choice(all_characters) for _ in range(length))
-    return secure_random_string
+FAKER = faker.Faker([ x.strip() for x in settings.RANDOM_STRING_LOCALES.split(",") if x.strip() ] or None)
+
+def generate_secure_random_string(length : int):
+    return "\n".join(FAKER.paragraphs(length))
 
 @dataclass
 class GeneratedText:
