@@ -15,7 +15,8 @@ import random
 FAKER = faker.Faker([ x.strip() for x in settings.RANDOM_STRING_LOCALES.split(",") if x.strip() ] or None)
 
 def generate_secure_random_string(length : int) -> str:
-    return "\n".join(FAKER.paragraphs(random.randint(round(length * 0.5), round(length * 1.5))))
+    count = random.randint(round(length * 0.5), round(length * 1.5))
+    return "\n".join([FAKER.paragraph() for _ in range(count)])
 
 @dataclass
 class GeneratedText:
