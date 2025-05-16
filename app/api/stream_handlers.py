@@ -17,13 +17,8 @@ async def stream_response_generator(
     cache_key: str
 ):
     format_type = getattr(chat_request, 'format_type', None)
-    if format_type and (format_type == "gemini"):
-        is_gemini = True
-        contents, system_instruction = None,None
-    else:
-        is_gemini = False
-        # 转换消息格式
-        contents, system_instruction = GeminiClient.convert_messages(GeminiClient, chat_request.messages,model=chat_request.model)
+    is_gemini = format_type and (format_type == "gemini")
+    
     # 设置初始并发数
     current_concurrent = settings.CONCURRENT_REQUESTS
     max_retry_num = settings.MAX_RETRY_NUM
@@ -89,6 +84,11 @@ async def stream_response_generator(
             # 假流式模式的处理逻辑
             log('info', f"假流式请求开始，使用密钥: {api_key[:8]}...",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})
+            
+            if is_gemini:
+                contents, system_instruction = None,None
+            else:
+                contents, system_instruction = GeminiClient.convert_messages(GeminiClient, chat_request.messages,model=chat_request.model)
             
             task = asyncio.create_task(
                 handle_fake_streaming(
@@ -230,6 +230,11 @@ async def stream_response_generator(
         # 获取密钥
         api_key = valid_keys[0]
         
+        if is_gemini:
+            contents, system_instruction = None,None
+        else:
+            contents, system_instruction = GeminiClient.convert_messages(GeminiClient, chat_request.messages,model=chat_request.model)
+    
         success = False
         try:            
             client = GeminiClient(api_key)

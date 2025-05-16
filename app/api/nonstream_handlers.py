@@ -73,14 +73,8 @@ async def process_request(
     global current_api_key
 
     format_type = getattr(chat_request, 'format_type', None)
-    if format_type and (format_type == "gemini"):
-        is_gemini = True
-        contents, system_instruction = None,None
-    else:
-        is_gemini = False
-        # 转换消息格式
-        contents, system_instruction = GeminiClient.convert_messages(GeminiClient, chat_request.messages,model=chat_request.model)
-
+    is_gemini = format_type and (format_type == "gemini")
+    
     # 设置初始并发数
     current_concurrent = settings.CONCURRENT_REQUESTS
     max_retry_num = settings.MAX_RETRY_NUM
@@ -147,6 +141,11 @@ async def process_request(
             log('info', f"非流式请求开始，使用密钥: {api_key[:8]}...", 
                 extra={'key': api_key[:8], 'request_type': 'non-stream', 'model': chat_request.model})
             
+            if is_gemini:
+                contents, system_instruction = None, None
+            else:
+                contents, system_instruction = GeminiClient.convert_messages(GeminiClient, chat_request.messages,model=chat_request.model)
+
             # 创建任务
             task = asyncio.create_task(
                 process_nonstream_request(
