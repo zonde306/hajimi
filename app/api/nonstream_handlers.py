@@ -228,13 +228,11 @@ async def process_request(
         worker = asyncio.Task(generate())
         while not worker.done():
             await asyncio.wait({ worker }, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.FIRST_COMPLETED)
-            if worker.done():
-                data = worker.result()
-                if isinstance(data, (dict, list)):
-                    yield json.dumps(data, separators=(',', ':'))
-                else:
-                    yield data
-            else:
-                yield "\n"
+            yield "\n"
+        
+        # 到这里就已经完成了
+        data = worker.result()
+        if isinstance(data, (dict, list)):
+            yield json.dumps(data, separators=(',', ':'))
     
     return StreamingResponse(process())
