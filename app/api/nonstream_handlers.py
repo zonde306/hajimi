@@ -184,11 +184,9 @@ async def process_request(
                                 extra={'key': api_key[:8],'request_type': 'non-stream', 'model': chat_request.model})
                             cached_response, cache_hit = await  response_cache_manager.get_and_remove(cache_key)
                             if is_gemini :
-                                yield cached_response.data
-                                raise StopAsyncIteration
+                                return cached_response.data
                             else:
-                                yield openAI_from_Gemini(cached_response,stream=False)
-                                raise StopAsyncIteration
+                                return openAI_from_Gemini(cached_response,stream=False)
                         elif status == "empty":
                             # 增加空响应计数
                             empty_response_count += 1
@@ -214,18 +212,17 @@ async def process_request(
                     extra={'request_type': 'non-stream', 'model': chat_request.model})
                 
                 if is_gemini :
-                    yield gemini_from_text(content="空响应次数达到上限\n请修改输入提示词",finish_reason="STOP",stream=False)
+                    return gemini_from_text(content="空响应次数达到上限\n请修改输入提示词",finish_reason="STOP",stream=False)
                 else:
-                    yield openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n请修改输入提示词",finish_reason="stop",stream=False)
-                raise StopAsyncIteration
+                    return openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n请修改输入提示词",finish_reason="stop",stream=False)
         
         # 如果所有尝试都失败
         log('error', "API key 替换失败，所有API key都已尝试，请重新配置或稍后重试", extra={'request_type': 'switch_key'})
         
         if is_gemini:
-            yield gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志",finish_reason="STOP",stream=False)
+            return gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志",finish_reason="STOP",stream=False)
         else:
-            yield openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志",finish_reason="stop",stream=False)
+            return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志",finish_reason="stop",stream=False)
 
     async def process():
         worker = asyncio.Task(generate())
