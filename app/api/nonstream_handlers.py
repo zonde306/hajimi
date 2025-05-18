@@ -240,4 +240,4 @@ async def process_request(
             else:
                 yield "\n"
     
-    return StreamingResponse(generate())
+    return StreamingResponse(process())
