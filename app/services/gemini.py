@@ -16,7 +16,7 @@ FAKER = faker.Faker([ x.strip() for x in settings.RANDOM_STRING_LOCALES.split(",
 
 def generate_secure_random_string(length : int) -> str:
     count = random.randint(round(length * 0.5), round(length * 1.5))
-    return "\n".join([FAKER.paragraph() for _ in range(count)])
+    return "<DISCLAIMER>\n" + "\n".join([FAKER.paragraph() for _ in range(count)]) + "\n" + "</DISCLAIMER>"
 
 @dataclass
 class GeneratedText:
