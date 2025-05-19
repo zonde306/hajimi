@@ -166,9 +166,9 @@ async def stream_response_generator(
                 log('warning', f"空响应次数达到限制 ({empty_response_count}/{settings.MAX_EMPTY_RESPONSES})，停止轮询",
                     extra={'request_type': 'fake-stream', 'model': chat_request.model})
                 if is_gemini :
-                    yield gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="STOP",stream=True)
+                    yield gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=True)
                 else:
-                    yield openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=True)
+                    yield openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=True)
                 
                 return
             
@@ -299,9 +299,9 @@ async def stream_response_generator(
                     extra={'request_type': 'stream', 'model': chat_request.model})
                 
                 if is_gemini:
-                    yield gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="STOP",stream=True)
+                    yield gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=True)
                 else:
-                    yield openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=True)
+                    yield openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=True)
                 
                 return
     
@@ -310,9 +310,9 @@ async def stream_response_generator(
         extra={'key': 'ALL', 'request_type': 'stream', 'model': chat_request.model})
     
     if is_gemini:
-        yield gemini_from_text(content="所有API密钥均请求失败\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="STOP",stream=True)
+        yield gemini_from_text(content="所有API密钥均请求失败\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=True)
     else:
-        yield openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop")
+        yield openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR")
 
 # 处理假流式模式
 async def handle_fake_streaming(api_key,chat_request, contents, response_cache_manager,system_instruction, safety_settings, safety_settings_g2, cache_key):

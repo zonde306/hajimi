@@ -212,17 +212,17 @@ async def process_request(
                     extra={'request_type': 'non-stream', 'model': chat_request.model})
                 
                 if is_gemini :
-                    return gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="STOP",stream=False)
+                    return gemini_from_text(content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
                 else:
-                    return openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=False)
+                    return openAI_from_text(model=chat_request.model,content="空响应次数达到上限\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
         
         # 如果所有尝试都失败
         log('error', "API key 替换失败，所有API key都已尝试，请重新配置或稍后重试", extra={'request_type': 'switch_key'})
         
         if is_gemini:
-            return gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="STOP",stream=False)
+            return gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
         else:
-            return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=False)
+            return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
 
     async def process():
         workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
@@ -231,7 +231,7 @@ async def process_request(
             yield "\n"
         
         responses = [worker.result() for worker in workers]
-        combined = combine_from_openai([ x for x in responses if isinstance(x, dict) ])
+        combined = combine_from_openai([ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ])
         yield json.dumps(combined, separators=(',', ':'))
     
     return StreamingResponse(process())
