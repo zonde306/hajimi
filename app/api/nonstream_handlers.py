@@ -225,7 +225,7 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=False)
 
     async def process():
-        workers = { asyncio.Task(generate()) for _ in range(max(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
+        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
         while not all([worker.done() for worker in workers]):
             await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
