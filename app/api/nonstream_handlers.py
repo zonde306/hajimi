@@ -7,7 +7,7 @@ from app.utils.error_handling import handle_gemini_error
 from app.utils.logging import log
 import app.config.settings as settings
 from typing import Literal
-from app.utils.response import gemini_from_text, openAI_from_Gemini, openAI_from_text
+from app.utils.response import gemini_from_text, openAI_from_Gemini, openAI_from_text, combine_from_openai
 from app.utils.stats import get_api_key_usage
 from fastapi.responses import StreamingResponse
 import json
@@ -71,15 +71,15 @@ async def process_request(
     cache_key: str
 ):
     """处理非流式请求"""
+    format_type = getattr(chat_request, 'format_type', None)
+    is_gemini = format_type and (format_type == "gemini")
+    max_retry_num = settings.MAX_RETRY_NUM
+
     async def generate():
         global current_api_key
 
-        format_type = getattr(chat_request, 'format_type', None)
-        is_gemini = format_type and (format_type == "gemini")
-        
         # 设置初始并发数
         current_concurrent = settings.CONCURRENT_REQUESTS
-        max_retry_num = settings.MAX_RETRY_NUM
         
         # 当前请求次数
         current_try_num = 0
@@ -225,14 +225,13 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="stop",stream=False)
 
     async def process():
-        worker = asyncio.Task(generate())
-        while not worker.done():
-            await asyncio.wait({ worker }, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.FIRST_COMPLETED)
+        workers = { asyncio.Task(generate()) for _ in range(chat_request.n) }
+        while not all([worker.done() for worker in workers]):
+            await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
         
-        # 到这里就已经完成了
-        data = worker.result()
-        if isinstance(data, (dict, list)):
-            yield json.dumps(data, separators=(',', ':'))
+        responses = [worker.result() for worker in workers]
+        combined = combine_from_openai([ x for x in responses if isinstance(x, dict) ])
+        yield json.dumps(combined, separators=(',', ':'))
     
     return StreamingResponse(process())

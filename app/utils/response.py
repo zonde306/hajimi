@@ -128,3 +128,19 @@ def openAI_from_Gemini(response,stream=True):
         # 非流式响应总是包含 usage 字段，以满足 response_model 验证
         formatted_chunk["usage"] = usage_data
         return formatted_chunk
+
+def combine_from_openai(responses: list):
+    if len(responses) < 1:
+        return responses
+
+    result = responses[0]
+
+    for i, res in enumerate(responses[1:], 1):
+        choice = res["choices"][0]
+        choice["index"] = i
+        result["choices"].append(choice)
+        result["usage"]["prompt_tokens"] += res["usage"]["prompt_tokens"]
+        result["usage"]["completion_tokens"] += res["usage"]["completion_tokens"]
+        result["usage"]["total_tokens"] += res["usage"]["total_tokens"]
+    
+    return result
