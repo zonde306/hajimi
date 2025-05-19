@@ -74,6 +74,7 @@ async def process_request(
     format_type = getattr(chat_request, 'format_type', None)
     is_gemini = format_type and (format_type == "gemini")
     max_retry_num = max(round(settings.MAX_RETRY_NUM / chat_request.n), 1)
+    max_concurrent_requests = max(round(settings.MAX_CONCURRENT_REQUESTS / chat_request.n), 1)
 
     async def generate():
         global current_api_key
@@ -202,7 +203,7 @@ async def process_request(
             # 如果当前批次没有成功响应，并且还有密钥可用，则继续尝试
             if not success and valid_keys:
                 # 增加并发数，但不超过最大并发数
-                current_concurrent = min(current_concurrent + settings.INCREASE_CONCURRENT_ON_FAILURE, settings.MAX_CONCURRENT_REQUESTS)
+                current_concurrent = min(current_concurrent + settings.INCREASE_CONCURRENT_ON_FAILURE, max_concurrent_requests)
                 log('info', f"所有并发请求失败或返回空响应，增加并发数至: {current_concurrent}", 
                     extra={'request_type': 'non-stream', 'model': chat_request.model})
             
@@ -225,7 +226,7 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
 
     async def process():
-        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
+        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, max_concurrent_requests)) }
         while not all([worker.done() for worker in workers]):
             await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
