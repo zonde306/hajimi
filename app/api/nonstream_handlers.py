@@ -232,7 +232,12 @@ async def process_request(
             yield "\n"
         
         responses = [worker.result() for worker in workers]
-        combined = combine_from_openai([ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ])
-        yield json.dumps(combined, separators=(',', ':'))
+        avaiable = [ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ]
+        if avaiable:
+            combined = combine_from_openai(avaiable)
+            yield json.dumps(combined, separators=(',', ':'))
+        elif responses:
+            yield json.dumps(responses[0], separators=(',', ':'))
+
     
     return StreamingResponse(process())
