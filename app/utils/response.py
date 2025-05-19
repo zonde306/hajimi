@@ -1,5 +1,6 @@
 import json
 import time
+import contextlib
 from app.utils.logging import log
 
 def openAI_from_text(model="gemini",content=None,finish_reason=None,total_token_count=0,stream=True):
@@ -139,8 +140,10 @@ def combine_from_openai(responses: list):
         choice = res["choices"][0]
         choice["index"] = i
         result["choices"].append(choice)
-        result["usage"]["prompt_tokens"] += res["usage"]["prompt_tokens"]
-        result["usage"]["completion_tokens"] += res["usage"]["completion_tokens"]
-        result["usage"]["total_tokens"] += res["usage"]["total_tokens"]
+
+        with contextlib.suppress(KeyError):
+            result["usage"]["prompt_tokens"] += res["usage"]["prompt_tokens"]
+            result["usage"]["completion_tokens"] += res["usage"]["completion_tokens"]
+            result["usage"]["total_tokens"] += res["usage"]["total_tokens"]
     
     return result
