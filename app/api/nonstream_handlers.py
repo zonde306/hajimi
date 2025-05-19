@@ -73,7 +73,7 @@ async def process_request(
     """处理非流式请求"""
     format_type = getattr(chat_request, 'format_type', None)
     is_gemini = format_type and (format_type == "gemini")
-    max_retry_num = round(settings.MAX_RETRY_NUM / chat_request.n)
+    max_retry_num = max(round(settings.MAX_RETRY_NUM / chat_request.n), 1)
 
     async def generate():
         global current_api_key
