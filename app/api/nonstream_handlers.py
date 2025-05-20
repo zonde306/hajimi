@@ -87,7 +87,7 @@ async def process_request(
         
         # 空响应计数
         empty_response_count = 0
-
+        
         # 尝试使用不同API密钥，直到达到最大重试次数或空响应限制
         while (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES):
             # 获取当前批次的密钥数量
@@ -233,6 +233,7 @@ async def process_request(
         
         responses = [worker.result() for worker in workers]
         avaiable = [ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ]
+        log('info', f'请求{len(responses)}次，成功{len(avaiable)}个')
         if avaiable:
             combined = combine_from_openai(avaiable)
             yield json.dumps(combined, separators=(',', ':'))
