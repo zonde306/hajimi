@@ -87,7 +87,7 @@ async def process_request(
         
         # 空响应计数
         empty_response_count = 0
-        
+
         # 尝试使用不同API密钥，直到达到最大重试次数或空响应限制
         while (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES):
             # 获取当前批次的密钥数量
@@ -226,14 +226,14 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
 
     async def process():
-        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, max_concurrent_requests)) }
+        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
         while not all([worker.done() for worker in workers]):
             await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
         
         responses = [worker.result() for worker in workers]
         avaiable = [ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ]
-        log('info', f'请求{len(responses)}次，成功{len(avaiable)}个')
+        log('info', f'并发请求{len(responses)}个，成功{len(avaiable)}个')
         if avaiable:
             combined = combine_from_openai(avaiable)
             yield json.dumps(combined, separators=(',', ':'))
