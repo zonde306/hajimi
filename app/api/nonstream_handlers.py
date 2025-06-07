@@ -221,9 +221,9 @@ async def process_request(
         log('error', "API key 替换失败，所有API key都已尝试，请重新配置或稍后重试", extra={'request_type': 'switch_key'})
         
         if is_gemini:
-            return gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
+            return gemini_from_text(content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n尝试更换预设、角色卡或修改聊天消息\n\n或者可能是提示词太长，尝试减少世界书条目或者隐藏楼层",finish_reason="ERROR",stream=False)
         else:
-            return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n具体错误请查看轮询日志\n\n请尝试更换预设、角色卡或修改聊天消息",finish_reason="ERROR",stream=False)
+            return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n尝试更换预设、角色卡或修改聊天消息\n\n或者可能是提示词太长，尝试减少世界书条目或者隐藏楼层",finish_reason="ERROR",stream=False)
 
     async def process():
         workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
