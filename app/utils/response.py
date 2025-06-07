@@ -142,7 +142,7 @@ def combine_from_openai(responses: list):
         result["choices"].append(choice)
 
         with contextlib.suppress(KeyError):
-            result["usage"]["prompt_tokens"] += res["usage"]["prompt_tokens"]
+            result["usage"]["prompt_tokens"] = res["usage"]["prompt_tokens"]
             result["usage"]["completion_tokens"] += res["usage"]["completion_tokens"]
             result["usage"]["total_tokens"] += res["usage"]["total_tokens"]
     
