@@ -284,6 +284,8 @@ class GeminiClient:
         
         async with httpx.AsyncClient() as client:
             async with client.stream("POST", url, headers=headers, json=data, timeout=600) as response:
+                if response.status_code != 200:
+                    log('ERROR', f"{response.text}")
                 response.raise_for_status()
                 buffer = b"" # 用于累积可能不完整的 JSON 数据
                 try:
@@ -329,7 +331,9 @@ class GeminiClient:
         
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.post(url, headers=headers, json=data, timeout=600) 
+                response = await client.post(url, headers=headers, json=data, timeout=600)
+                if response.status_code != 200:
+                    log('ERROR', f"{response.text}")
                 response.raise_for_status() # 检查 HTTP 错误状态
             
             return GeminiResponseWrapper(response.json())
@@ -471,3 +475,18 @@ class GeminiClient:
             models.extend(GeminiClient.EXTRA_MODELS)
                 
             return models
+    
+    async def count_tokens(self, request, contents, safety_settings, system_instruction) -> int | None:
+        api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
+        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:countTokens"
+        headers = {
+            "Content-Type": "application/json",
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json={ "generateContentRequest": data }, timeout=600)
+            if response.status_code != 200:
+                log('ERROR', f"{response.text}")
+            return response.json().get("totalTokens", 0)
+        
+        return None

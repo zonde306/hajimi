@@ -179,9 +179,9 @@ async def process_request(
                     try:
                         status = task.result()                    
                         # 如果有成功响应内容
-                        if status == "success" :  
+                        if status == "success":  
                             success = True
-                            log('info', f"非流式请求成功", 
+                            log('info', "非流式请求成功", 
                                 extra={'key': api_key[:8],'request_type': 'non-stream', 'model': chat_request.model})
                             cached_response, cache_hit = await  response_cache_manager.get_and_remove(cache_key)
                             if is_gemini :
