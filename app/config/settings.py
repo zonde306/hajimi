@@ -100,3 +100,5 @@ WHITELIST_USER_AGENT = { x.strip().lower() for x in os.environ.get("WHITELIST_US
 # 允许的源列表，逗号分隔，例如 "http://localhost:3000,https://example.com"
 ALLOWED_ORIGINS_STR = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_STR.split(",") if origin.strip()]
+
+API_PROXY = os.environ.get("API_PROXY", None)

@@ -3,10 +3,7 @@ import os
 import httpx 
 from app.models.schemas import ChatCompletionRequest
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
-import httpx
-import secrets
-import string
+from typing import Optional, Dict, Any
 import app.config.settings as settings
 import faker
 from app.utils.logging import log
@@ -141,7 +138,7 @@ class GeminiResponseWrapper:
 class GeminiClient:
 
     AVAILABLE_MODELS = []
-    EXTRA_MODELS = os.environ.get("EXTRA_MODELS", "").split(",")
+    EXTRA_MODELS = [ x for x in os.environ.get("EXTRA_MODELS", "").split(",") if x]
 
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -282,7 +279,7 @@ class GeminiClient:
             "Content-Type": "application/json",
         }
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             async with client.stream("POST", url, headers=headers, json=data, timeout=600) as response:
                 if response.status_code != 200:
                     log('ERROR', f"{response.json().get('error', {}).get('message')}")
@@ -330,7 +327,7 @@ class GeminiClient:
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
                 response = await client.post(url, headers=headers, json=data, timeout=600)
                 if response.status_code != 200:
                     log('ERROR', f"{response.json().get('error', {}).get('message')}")
@@ -463,7 +460,7 @@ class GeminiClient:
     async def list_available_models(api_key) -> list:
         url = "https://generativelanguage.googleapis.com/v1beta/models?key={}".format(
             api_key)
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()
@@ -483,7 +480,7 @@ class GeminiClient:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             response = await client.post(url, headers=headers, json={ "generateContentRequest": data }, timeout=600)
             if response.status_code != 200:
                 log('ERROR', f"{response.json().get('error', {}).get('message')}")

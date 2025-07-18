@@ -26,7 +26,7 @@ class GeneratedText:
 class OpenAIClient:
 
     AVAILABLE_MODELS = []
-    EXTRA_MODELS = os.environ.get("EXTRA_MODELS", "").split(",")
+    EXTRA_MODELS = [ x for x in os.environ.get("EXTRA_MODELS", "").split(",") if x]
 
     def __init__(self, api_key: str):
         self.api_key = api_key
