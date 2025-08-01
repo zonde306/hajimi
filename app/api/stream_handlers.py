@@ -18,6 +18,7 @@ async def stream_response_generator(
 ):
     format_type = getattr(chat_request, 'format_type', None)
     is_gemini = format_type and (format_type == "gemini")
+    fake_streaming = getattr(chat_request, 'fake_streaming', settings.FAKE_STREAMING)
     
     # 设置初始并发数
     current_concurrent = settings.CONCURRENT_REQUESTS
@@ -30,7 +31,7 @@ async def stream_response_generator(
     empty_response_count = 0
     
     # (假流式) 尝试使用不同API密钥，直到达到最大重试次数或空响应限制
-    while (settings.FAKE_STREAMING and (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES)):
+    while (fake_streaming and (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES)):
         # 获取当前批次的密钥数量
         batch_num = min(max_retry_num - current_try_num, current_concurrent)
         
@@ -183,7 +184,7 @@ async def stream_response_generator(
                 extra={'request_type': 'stream', 'model': chat_request.model})
 
     # (真流式) 尝试使用不同API密钥，直到达到最大重试次数或空响应限制
-    while (not settings.FAKE_STREAMING and (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES)):
+    while (not fake_streaming and (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES)):
         # 获取当前批次的密钥
         valid_keys = []
         checked_keys = set()  # 用于记录已检查过的密钥

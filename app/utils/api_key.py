@@ -81,6 +81,8 @@ async def test_api_key(api_key: str) -> bool:
         url = "https://generativelanguage.googleapis.com/v1beta/models?key={}".format(api_key)
         async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             response = await client.get(url)
+            if response.status_code == 403:
+                logger.error(f"请求被拒绝，请检查 IP ({settings.API_PROXY}) 是否在可用区内。")
             response.raise_for_status()
             return True
     except Exception:
