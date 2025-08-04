@@ -50,7 +50,7 @@ class ResponseCacheManager:
         async with self.lock:
             if cache_key in self.cache:
                 # 优先选择长度较长的有效缓存项
-                cache_deque = sorted(self.cache[cache_key], key=lambda e: e.tokens, reverse=True)
+                cache_deque = sorted(self.cache[cache_key], key=lambda e: e["tokens"], reverse=True)
 
                 # 查找第一个有效项并收集过期项
                 valid_item_to_remove = None
