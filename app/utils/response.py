@@ -134,6 +134,7 @@ def combine_from_openai(responses: list):
     if len(responses) < 1:
         return responses
 
+    responses = sorted(responses, key=lambda x: x.get("usage", {}).get("completion_tokens", 0) or len(x["choices"][0]["message"]), reverse=True)
     result = responses[0]
 
     for i, res in enumerate(responses[1:], 1):
