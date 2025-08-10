@@ -316,6 +316,8 @@ async def gemini_chat_completions(
     except ValueError:
         raise HTTPException(status_code=400, detail="无效的请求路径")
     
+    if isinstance(payload.contents, dict):
+        payload.contents = [ payload.contents ]
     geminiRequest = AIRequest(payload=payload,model=model_name,stream=is_stream,format_type='gemini')
     return await aistudio_chat_completions(geminiRequest, request, _dp, _du)
         
