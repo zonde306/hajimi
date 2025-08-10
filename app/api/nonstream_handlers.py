@@ -240,5 +240,4 @@ async def process_request(
         elif responses:
             yield json.dumps(responses[0], separators=(',', ':'))
 
-    
-    return StreamingResponse(process(), media_type="text/event-stream")
+    return StreamingResponse(process(), media_type="application/x-ndjson")
