@@ -25,7 +25,7 @@ class ChatCompletionRequest(BaseModel):
 
 # gemini 请求
 class ChatRequestGemini(BaseModel):
-    contents: List[Dict[str, Any]]
+    contents: List[Dict[str, Any]] | Dict[str, Any]
     system_instruction: Optional[Dict[str, Any]]= None
     systemInstruction: Optional[Dict[str, Any]]= None
     safetySettings: Optional[List[Dict[str, Any]]] = None
