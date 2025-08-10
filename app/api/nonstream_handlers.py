@@ -73,8 +73,8 @@ async def process_request(
     """处理非流式请求"""
     format_type = getattr(chat_request, 'format_type', None)
     is_gemini = format_type and (format_type == "gemini")
-    max_retry_num = max(round(settings.MAX_RETRY_NUM / chat_request.n), 1)
-    max_concurrent_requests = max(round(settings.MAX_CONCURRENT_REQUESTS / chat_request.n), 1)
+    max_retry_num = max(round(settings.MAX_RETRY_NUM / getattr(chat_request, "n", 1)), 1)
+    max_concurrent_requests = max(round(settings.MAX_CONCURRENT_REQUESTS / getattr(chat_request, "n", 1)), 1)
 
     async def generate():
         global current_api_key
@@ -226,7 +226,7 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n尝试更换预设、角色卡或修改聊天消息\n\n或者可能是提示词太长，尝试减少世界书条目或者隐藏楼层",finish_reason="ERROR",stream=False)
 
     async def process():
-        workers = { asyncio.Task(generate()) for _ in range(min(chat_request.n, settings.MAX_CONCURRENT_REQUESTS)) }
+        workers = { asyncio.Task(generate()) for _ in range(min(getattr(chat_request, "n", 1), settings.MAX_CONCURRENT_REQUESTS)) }
         while not all([worker.done() for worker in workers]):
             await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
