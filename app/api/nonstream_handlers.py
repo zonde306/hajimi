@@ -1,15 +1,13 @@
 import asyncio
-from fastapi import HTTPException, Request
 from app.models.schemas import ChatCompletionRequest
 from app.services import GeminiClient
 from app.utils import update_api_call_stats
 from app.utils.error_handling import handle_gemini_error
 from app.utils.logging import log
 import app.config.settings as settings
-from typing import Literal
 from app.utils.response import gemini_from_text, openAI_from_Gemini, openAI_from_text, combine_from_openai
 from app.utils.stats import get_api_key_usage
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import json
 
 # 非流式请求处理函数
@@ -239,5 +237,11 @@ async def process_request(
             yield json.dumps(combined, separators=(',', ':'))
         elif responses:
             yield json.dumps(responses[0], separators=(',', ':'))
-
-    return StreamingResponse(process(), media_type="application/x-ndjson")
+    
+    if getattr(chat_request, "fake_stream", settings.FAKE_STREAMING):
+        return StreamingResponse(process(), media_type="application/x-ndjson")
+    
+    content = ""
+    async for chunk in process():
+        content += chunk
+    return JSONResponse(json.loads(content), media_type="application/json")
