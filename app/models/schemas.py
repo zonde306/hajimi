@@ -23,7 +23,7 @@ class ChatCompletionRequest(BaseModel):
     tools: Optional[List[Dict[str, Any]]] = None
     tool_choice: Optional[Union[Literal["none", "auto"], Dict[str, Any]]] = "auto"
     fake_stream: Optional[bool] = True
-    retry_if_not_found: Optional[str] = ""
+    retry_if_not_found: Optional[list[str]] = []
 
 # gemini 请求
 class ChatRequestGemini(BaseModel):
@@ -34,7 +34,7 @@ class ChatRequestGemini(BaseModel):
     generationConfig: Optional[Dict[str, Any]] = None
     tools: Optional[List[Dict[str, Any]]] = None
     fake_stream: Optional[bool] = True
-    retry_if_not_found: Optional[str] = ""
+    retry_if_not_found: Optional[list[str]] = []
 
 # AI模型请求包装
 class AIRequest(BaseModel):
