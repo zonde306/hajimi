@@ -18,7 +18,7 @@ async def stream_response_generator(
 ):
     format_type = getattr(chat_request, 'format_type', None)
     is_gemini = format_type and (format_type == "gemini")
-    fake_streaming = getattr(chat_request, 'fake_streaming', settings.FAKE_STREAMING)
+    fake_streaming = getattr(chat_request, "fake_stream", settings.FAKE_STREAMING)
     
     # 设置初始并发数
     current_concurrent = settings.CONCURRENT_REQUESTS
@@ -264,7 +264,6 @@ async def stream_response_generator(
                     
                     # log('info', f"流式响应发送数据: {data}")
                     yield data
-                    
                 else:
                     log('warning', f"流式请求返回空响应，空响应计数: {empty_response_count}/{settings.MAX_EMPTY_RESPONSES}",
                         extra={'key': api_key[:8], 'request_type': 'stream', 'model': chat_request.model})
@@ -342,8 +341,8 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
         await update_api_call_stats(settings.api_call_stats, endpoint=api_key, model=chat_request.model,token=response_content.total_token_count)
         
         # 检查响应内容是否为空
-        if not response_content or not response_content.text:
-            log('warning', f"请求返回空响应",
+        if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH:
+            log('warning', "请求返回空响应",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"
 

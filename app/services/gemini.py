@@ -222,18 +222,19 @@ class GeminiClient:
                             del parameters["$schema"]
                         if parameters is not None:
                             declaration["parameters"] = parameters
-
+                        
                         # 移除值为 None 的键，以保持 payload 清洁
                         declaration = {k: v for k, v in declaration.items() if v is not None}
                         if declaration.get("name"): # 确保 name 存在
                             function_declarations.append(declaration)
 
         if function_declarations:
-            data["tools"] = [{"function_declarations": function_declarations}]
+            data["tools"] = [ {"function_declarations": function_declarations} ]
 
         # 2. 添加 tool_config (基于 tool_choice)
-        tool_config = None 
-        if request.tool_choice:
+        tool_config = None
+        # tool_choice 必须在有 function_declarations 的情况下才可填写
+        if request.tool_choice and function_declarations:
             choice = request.tool_choice
             mode = None
             allowed_functions = None

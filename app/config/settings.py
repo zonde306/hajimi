@@ -18,6 +18,7 @@ FAKE_STREAMING_INTERVAL = float(os.environ.get("FAKE_STREAMING_INTERVAL", "1"))
 
 # 空响应重试次数限制
 MAX_EMPTY_RESPONSES = int(os.environ.get("MAX_EMPTY_RESPONSES", "5"))  # 默认最多允许5次空响应
+MIN_RESPONSE_LENGTH = int(os.environ.get("MIN_RESPONSE_LENGTH", "400"))
 
 #随机字符串
 RANDOM_STRING = os.environ.get("RANDOM_STRING", "true").lower() in ["true", "1", "yes"]
