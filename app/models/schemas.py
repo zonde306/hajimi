@@ -33,8 +33,6 @@ class ChatRequestGemini(BaseModel):
     safetySettings: Optional[List[Dict[str, Any]]] = None
     generationConfig: Optional[Dict[str, Any]] = None
     tools: Optional[List[Dict[str, Any]]] = None
-    fake_stream: Optional[bool] = True
-    retry_if_not_found: Optional[list[str]] = []
 
 # AI模型请求包装
 class AIRequest(BaseModel):
