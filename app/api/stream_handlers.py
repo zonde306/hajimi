@@ -329,6 +329,7 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
         )
     )
     gemini_task = asyncio.shield(gemini_task)
+    retry_if = getattr(chat_request, 'retry_if_not_found', '')
     
     try:
         # 获取响应内容
@@ -341,7 +342,7 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
         await update_api_call_stats(settings.api_call_stats, endpoint=api_key, model=chat_request.model,token=response_content.total_token_count)
         
         # 检查响应内容是否为空
-        if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH:
+        if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH or retry_if not in response_content.text:
             log('warning', "请求返回空响应或截断",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"

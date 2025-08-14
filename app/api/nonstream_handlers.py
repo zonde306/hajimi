@@ -34,6 +34,7 @@ async def process_nonstream_request(
     )
     # 使用 shield 保护任务不被外部轻易取消
     shielded_gemini_task = asyncio.shield(gemini_task)
+    retry_if = getattr(chat_request, 'retry_if_not_found', '')
 
     try:
         # 等待受保护的 API 调用任务完成
@@ -41,7 +42,7 @@ async def process_nonstream_request(
         response_content.set_model(chat_request.model)
         
         # 检查响应内容是否为空
-        if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH:
+        if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH or retry_if not in response_content.text:
             log('warning', f"API密钥 {current_api_key[:8]}... 返回空响应或截断",
                 extra={'key': current_api_key[:8], 'request_type': 'non-stream', 'model': chat_request.model})
             return "empty"
