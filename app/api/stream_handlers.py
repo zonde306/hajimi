@@ -334,7 +334,7 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
         # 获取响应内容
         response_content = await gemini_task
         response_content.set_model(chat_request.model)
-        log('info', f"假流式成功获取响应，进行缓存",
+        log('info', "假流式成功获取响应，进行缓存",
             extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})
 
         # 更新API调用统计
@@ -342,7 +342,7 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
         
         # 检查响应内容是否为空
         if not response_content or not response_content.text or len(response_content.text) < settings.MIN_RESPONSE_LENGTH:
-            log('warning', "请求返回空响应",
+            log('warning', "请求返回空响应或截断",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"
 

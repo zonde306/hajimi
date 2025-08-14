@@ -140,6 +140,8 @@ def combine_from_openai(responses: list):
     for i, res in enumerate(responses[1:], 1):
         choice = res["choices"][0]
         choice["index"] = i
+        if res.get("usage", None):
+            choice["usage"] = res["usage"]
         result["choices"].append(choice)
 
         with contextlib.suppress(KeyError):
