@@ -136,6 +136,8 @@ def combine_from_openai(responses: list):
 
     responses.sort(key=lambda x: len(x["choices"][0]["message"]), reverse=True)
     result = responses[0]
+    if result[0].get("usage", None):
+        result["usage"] = result[0]["usage"]
 
     for i, res in enumerate(responses[1:], 1):
         choice = res["choices"][0]
