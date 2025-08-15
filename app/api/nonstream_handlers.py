@@ -241,16 +241,19 @@ async def process_request(
             yield "\n"
         
         responses = [worker.result() for worker in workers]
-        avaiable = [ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ]
+        if is_gemini:
+            avaiable = [ x for x in responses if isinstance(x, dict) and x["candidates"] and x["candidates"][0]["finishReason"] == "STOP" ]
+        else:
+            avaiable = [ x for x in responses if isinstance(x, dict) and x["choices"] and x["choices"][0]["finish_reason"] != "ERROR" ]
         log('info', f'并发请求{len(responses)}个，成功{len(avaiable)}个')
         if avaiable:
             combined = combine_from_openai(avaiable)
-            yield json.dumps(combined, separators=(',', ':'))
+            yield json.dumps(combined, separators=(',', ':'), ensure_ascii=False)
         elif responses:
-            yield json.dumps(responses[0], separators=(',', ':'))
+            yield json.dumps(responses[0], separators=(',', ':'), ensure_ascii=False)
     
     if getattr(chat_request, "fake_stream", settings.FAKE_STREAMING):
-        return StreamingResponse(process(), media_type="application/x-ndjson")
+        return StreamingResponse(process(), media_type="application/x-ndjson; charset=utf-8")
     
     content = ""
     async for chunk in process():
