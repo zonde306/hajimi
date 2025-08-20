@@ -463,8 +463,7 @@ class GeminiClient:
 
     @staticmethod
     async def list_available_models(api_key) -> list:
-        url = "https://generativelanguage.googleapis.com/v1beta/models?key={}".format(
-            api_key)
+        url = "https://generativelanguage.googleapis.com/v1beta/models?key={}".format(api_key)
         async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             response = await client.get(url)
             response.raise_for_status()
@@ -480,7 +479,7 @@ class GeminiClient:
     
     async def count_tokens(self, request, contents, safety_settings, system_instruction) -> int | None:
         api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
-        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:countTokens"
+        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:countTokens?key={self.api_key}"
         headers = {
             "Content-Type": "application/json",
         }
