@@ -478,8 +478,8 @@ class GeminiClient:
             return models
     
     async def count_tokens(self, request, contents, safety_settings, system_instruction) -> int | None:
-        api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
-        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:countTokens?key={self.api_key}"
+        _, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model}:countTokens?key={self.api_key}"
         headers = {
             "Content-Type": "application/json",
         }
