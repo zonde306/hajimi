@@ -85,7 +85,7 @@ async def process_request(
     max_retry_num = max(round(settings.MAX_RETRY_NUM / getattr(chat_request, "n", 1)), 1)
     max_concurrent_requests = max(round(settings.MAX_CONCURRENT_REQUESTS / getattr(chat_request, "n", 1)), 1)
 
-    async def generate():
+    async def generate(idx: int):
         global current_api_key
 
         # 设置初始并发数
@@ -96,6 +96,8 @@ async def process_request(
         
         # 空响应计数
         empty_response_count = 0
+
+        await asyncio.sleep(idx * 0.25)
 
         # 尝试使用不同API密钥，直到达到最大重试次数或空响应限制
         while (current_try_num < max_retry_num) and (empty_response_count < settings.MAX_EMPTY_RESPONSES):
@@ -235,7 +237,7 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n尝试更换预设、角色卡或修改聊天消息\n\n或者可能是提示词太长，尝试减少世界书条目或者隐藏楼层",finish_reason="ERROR",stream=False)
 
     async def process():
-        workers = { asyncio.Task(generate()) for _ in range(min(getattr(chat_request, "n", 1), settings.MAX_CONCURRENT_REQUESTS)) }
+        workers = { asyncio.Task(generate(i)) for i in range(min(getattr(chat_request, "n", 1), settings.MAX_CONCURRENT_REQUESTS)) }
         while not all([worker.done() for worker in workers]):
             await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
