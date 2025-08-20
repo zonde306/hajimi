@@ -331,7 +331,7 @@ class GeminiClient:
             async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
                 response = await client.post(url, headers=headers, json=data, timeout=600)
                 if response.status_code != 200:
-                    if response.status_code == 500:
+                    if response.status_code == 500 or response.status_code == 429:
                         tokens = await self.count_tokens(request, contents, safety_settings, system_instruction)
                         if tokens:
                             log('ERROR', f"请求失败，可能是因为请求的 token 数量超过了限制，当前请求的 token 数量为 {tokens}，请减少请求的 token 数量。")
