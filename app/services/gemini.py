@@ -486,8 +486,12 @@ class GeminiClient:
 
         async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
             response = await client.post(url, headers=headers, json={ "generateContentRequest": data }, timeout=600)
-            if response.status_code != 200:
-                log('ERROR', f"计算 token 数量失败，{response.json().get('error', {}).get('message')}")
-            return response.json().get("totalTokens", 0)
+            try:
+                if response.status_code != 200:
+                    log('ERROR', f"计算 token 数量失败，{response.json().get('error', {}).get('message')}")
+                return response.json().get("totalTokens", 0)
+            except Exception:
+                log('ERROR', f"计算 token 数量失败，{response.text}")
+                return None
         
         return None
