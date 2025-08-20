@@ -7,7 +7,7 @@ from app.utils.logging import log
 import app.config.settings as settings
 from app.utils.response import gemini_from_text, openAI_from_Gemini, openAI_from_text, combine_from_openai
 from app.utils.stats import get_api_key_usage
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, Response
 import json
 
 # 非流式请求处理函数
@@ -250,7 +250,9 @@ async def process_request(
             combined = combine_from_openai(avaiable)
             yield json.dumps(combined, separators=(',', ':'), ensure_ascii=False)
         elif responses:
-            yield json.dumps(responses[0], separators=(',', ':'), ensure_ascii=False)
+            resp = responses[0]
+            resp.update({ "error": { "message": "所有请求均返回空响应，请稍后重试或检查预设/角色卡/消息" } })
+            yield json.dumps(resp, separators=(',', ':'), ensure_ascii=False)
     
     if getattr(chat_request, "fake_stream", settings.FAKE_STREAMING):
         return StreamingResponse(process(), media_type="application/x-ndjson; charset=utf-8")
@@ -258,4 +260,4 @@ async def process_request(
     content = ""
     async for chunk in process():
         content += chunk
-    return JSONResponse(json.loads(content), media_type="application/json")
+    return Response(content.strip(), media_type="application/json; charset=utf-8")

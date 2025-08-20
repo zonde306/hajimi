@@ -57,7 +57,7 @@ def gemini_from_text(content=None, finish_reason=None, total_token_count=0, stre
         return gemini_response
 
 
-def openAI_from_Gemini(response,stream=True):
+def openAI_from_Gemini(response, stream=True):
     """
     根据 GeminiResponseWrapper 对象创建 OpenAI 标准响应对象块。
 
@@ -113,7 +113,7 @@ def openAI_from_Gemini(response,stream=True):
         }
     elif response.text:
         # 处理普通文本响应
-        content_chunk = {"role": "assistant", "content": response.text}
+        content_chunk = { "role": "assistant", "content": response.text }
     
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
@@ -136,19 +136,19 @@ def combine_from_openai(responses: list):
 
     responses.sort(key=lambda x: len(x["choices"][0]["message"]), reverse=True)
     result = responses[0]
-    if result.get("usage", None):
-        result["choices"][0]["usage"] = result["usage"]
+    #if result.get("usage", None):
+    #    result["choices"][0]["usage"] = result["usage"]
 
     for i, res in enumerate(responses[1:], 1):
         choice = res["choices"][0]
         choice["index"] = i
-        if res.get("usage", None):
-            choice["usage"] = res["usage"]
+        #if res.get("usage", None):
+        #    choice["usage"] = res["usage"]
         result["choices"].append(choice)
 
         with contextlib.suppress(KeyError):
-            result["usage"]["prompt_tokens"] = res["usage"]["prompt_tokens"]
-            result["usage"]["completion_tokens"] += res["usage"]["completion_tokens"]
-            result["usage"]["total_tokens"] += res["usage"]["total_tokens"]
+            result["usage"]["prompt_tokens"] = max(res["usage"]["prompt_tokens"], result["usage"]["prompt_tokens"])
+            result["usage"]["completion_tokens"] = max(res["usage"]["completion_tokens"], result["usage"]["completion_tokens"])
+            result["usage"]["total_tokens"] = max(res["usage"]["total_tokens"], result["usage"]["total_tokens"])
     
     return result
