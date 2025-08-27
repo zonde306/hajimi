@@ -49,12 +49,12 @@ async def process_nonstream_request(
             print(response_content)
             return "empty"
         
-        if len(response_content.text) < getattr(chat_request, 'min_length', settings.MIN_RESPONSE_LENGTH):
+        if not response_content.files and len(response_content.text) < (getattr(chat_request, 'min_length', None) or settings.MIN_RESPONSE_LENGTH):
             log('warning', f"API密钥 {current_api_key[:8]}... 返回截断",
                 extra={'key': current_api_key[:8], 'request_type': 'non-stream', 'model': chat_request.model})
             return "empty"
         
-        if retry_if and not any(map(lambda r: r in response_content.text, retry_if)):
+        if not response_content.files and  retry_if and not any(map(lambda r: r in response_content.text, retry_if)):
             log('warning', f"API密钥 {current_api_key[:8]}... 返回缺少关键字",
                 extra={'key': current_api_key[:8], 'request_type': 'non-stream', 'model': chat_request.model})
             return "empty"

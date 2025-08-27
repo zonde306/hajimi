@@ -115,10 +115,12 @@ def openAI_from_Gemini(response, stream=True):
         # 处理普通文本响应
         content_chunk = { "role": "assistant", "content": response.text }
     
+    # 添加附件到文本响应
     if response.files:
         if not content_chunk:
             content_chunk = { "role": "assistant", "content": '' }
         for file in response.files:
+            # FIXME: 上传文件到图床，而不是直接返回 base64
             if "image" in file["mime"]:
                 content_chunk['content'] += f'\n<img src="{file["data"]}" />'
             elif "audio" in file["mime"]:

@@ -347,12 +347,12 @@ async def handle_fake_streaming(api_key,chat_request, contents, response_cache_m
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"
         
-        if len(response_content.text) < settings.MIN_RESPONSE_LENGTH:
+        if not response_content.files and len(response_content.text) < (getattr(chat_request, 'min_length', None) or settings.MIN_RESPONSE_LENGTH):
             log('warning', "请求返回截断",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"
         
-        if retry_if and not any(map(lambda r: r in response_content.text, retry_if)):
+        if not response_content.files and retry_if and not any(map(lambda r: r in response_content.text, retry_if)):
             log('warning', "请求返回缺少关键字",
                 extra={'key': api_key[:8], 'request_type': 'fake-stream', 'model': chat_request.model})        
             return "empty"
