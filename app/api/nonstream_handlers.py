@@ -46,6 +46,7 @@ async def process_nonstream_request(
         if not response_content or not response_content.text:
             log('warning', f"API密钥 {current_api_key[:8]}... 返回空响应",
                 extra={'key': current_api_key[:8], 'request_type': 'non-stream', 'model': chat_request.model})
+            print(response_content)
             return "empty"
         
         if len(response_content.text) < settings.MIN_RESPONSE_LENGTH:

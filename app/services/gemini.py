@@ -175,6 +175,16 @@ class GeminiResponseWrapper:
     @property
     def embedding(self) -> Optional[list[float]]:
         return self._embedding
+    
+    @property
+    def empty(self):
+        return not self.text and not self.function_call and not self.files and not self.embedding
+
+    def __repr__(self):
+        return self._data.__repr__()
+    
+    def __str__(self):
+        return self._data.__str__()
 
 class GeminiClient:
 
@@ -235,7 +245,7 @@ class GeminiClient:
             "topP": request.top_p,
             "topK": request.top_k,
             "stopSequences": request.stop if isinstance(request.stop, list) else [request.stop] if request.stop is not None else None,
-            "candidateCount": 1,
+            "candidateCount": 1, # 通过并发实现多个候选，而不是API
             "responseModalities": modal,
         }
         if request.thinking_budget:
