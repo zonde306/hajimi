@@ -9,6 +9,7 @@ from app.utils.response import gemini_from_text, openAI_from_Gemini, openAI_from
 from app.utils.stats import get_api_key_usage
 from fastapi.responses import StreamingResponse, Response
 import json
+import time
 
 # 非流式请求处理函数
 async def process_nonstream_request(
@@ -237,12 +238,20 @@ async def process_request(
             return openAI_from_text(model=chat_request.model,content="所有API密钥均请求失败\n\n尝试更换预设、角色卡或修改聊天消息\n\n或者可能是提示词太长，尝试减少世界书条目或者隐藏楼层",finish_reason="ERROR",stream=False)
 
     async def process():
+        deadline = time.time() + settings.TIMEOUT
         workers = { asyncio.Task(generate(i)) for i in range(min(getattr(chat_request, "n", 1), settings.MAX_CONCURRENT_REQUESTS)) }
         while not all([worker.done() for worker in workers]):
-            await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
+            if time.time() > deadline:
+                # 如果超时，只需要等待一个任务完成
+                done, _ = await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.FIRST_COMPLETED)
+                if done:
+                    break
+            else:
+                # 否则等待所有任务完成
+                await asyncio.wait(workers, timeout=settings.FAKE_STREAMING_INTERVAL, return_when=asyncio.ALL_COMPLETED)
             yield "\n"
         
-        responses = [worker.result() for worker in workers]
+        responses = [worker.result() for worker in workers if worker.done()]
         if is_gemini:
             avaiable = [ x for x in responses if isinstance(x, dict) and x["candidates"] and x["candidates"][0]["finishReason"] == "STOP" ]
         else:
@@ -255,6 +264,8 @@ async def process_request(
             resp = responses[0]
             resp.update({ "error": { "message": "所有请求均返回空响应，请稍后重试或检查预设/角色卡/消息" } })
             yield json.dumps(resp, separators=(',', ':'), ensure_ascii=False)
+        else:
+            yield json.dumps({ "error": { "message": "所有请求超时" } }, separators=(',', ':'), ensure_ascii=False)
     
     if getattr(chat_request, "fake_stream", settings.FAKE_STREAMING):
         return StreamingResponse(process(), media_type="application/x-ndjson; charset=utf-8")
