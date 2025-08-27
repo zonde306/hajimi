@@ -24,6 +24,7 @@ class ChatCompletionRequest(BaseModel):
     tool_choice: Optional[Union[Literal["none", "auto"], Dict[str, Any]]] = "auto"
     fake_stream: Optional[bool] = True
     retry_if_not_found: Optional[list[str]] = []
+    min_length: Optional[int] = None
 
 # gemini 请求
 class ChatRequestGemini(BaseModel):
