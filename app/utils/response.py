@@ -1,6 +1,7 @@
 import json
 import time
 import contextlib
+from app.utils.logging import log
 
 def openAI_from_text(model="gemini",content=None,finish_reason=None,total_token_count=0,stream=True):
     """
@@ -118,7 +119,14 @@ def openAI_from_Gemini(response, stream=True):
         if not content_chunk:
             content_chunk = { "role": "assistant", "content": '' }
         for file in response.files:
-            content_chunk['content'] += f'\n<img src="{file["data"]}" />'
+            if "image" in file["mime"]:
+                content_chunk['content'] += f'\n<img src="{file["data"]}" />'
+            elif "audio" in file["mime"]:
+                content_chunk['content'] += f'\n<audio src="{file["data"]}" />'
+            elif "video" in file["mime"]:
+                content_chunk['content'] += f'\n<video src="{file["data"]}" />'
+            else:
+                log('error', f"响应未知文件类型: {file['mime']}")
     
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
