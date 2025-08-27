@@ -118,7 +118,7 @@ def openAI_from_Gemini(response, stream=True):
         if not content_chunk:
             content_chunk = { "role": "assistant", "content": '' }
         for file in response.files:
-            content_chunk['content'] += f'\n<img src="{file['data']}" />'
+            content_chunk['content'] += f'\n<img src="{file["data"]}" />'
     
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
