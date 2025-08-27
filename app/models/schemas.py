@@ -68,3 +68,11 @@ class ChatResponseGemini(BaseModel):
     candidates: Optional[List[Any]] = None
     promptFeedback: Optional[Any] = None
     usageMetadata: Optional[Dict[str, int]] = None
+
+class ExtrasResponseEmbeddings(BaseModel):
+    embedding: list[float]
+
+class ExtrasRequestEmbeddings(BaseModel):
+    text: str | list[str]
+    model: str | None
+    dimension: int = 768

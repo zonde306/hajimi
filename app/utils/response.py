@@ -1,7 +1,6 @@
 import json
 import time
 import contextlib
-from app.utils.logging import log
 
 def openAI_from_text(model="gemini",content=None,finish_reason=None,total_token_count=0,stream=True):
     """

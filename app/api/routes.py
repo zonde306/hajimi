@@ -8,7 +8,7 @@ from app.utils.response import openAI_from_Gemini
 from app.utils.auth import custom_verify_password
 from .stream_handlers import process_stream_request
 from .nonstream_handlers import process_request
-from app.models.schemas import ChatCompletionRequest, ChatCompletionResponse, ModelList, AIRequest, ChatRequestGemini
+from app.models.schemas import ChatCompletionRequest, ChatCompletionResponse, ModelList, AIRequest, ChatRequestGemini, ExtrasRequestEmbeddings, ExtrasResponseEmbeddings
 import app.config.settings as settings
 import asyncio
 from app.vertex.routes import chat_api, models_api
@@ -321,3 +321,15 @@ async def gemini_chat_completions(
     geminiRequest = AIRequest(payload=payload,model=model_name,stream=is_stream,format_type='gemini')
     return await aistudio_chat_completions(geminiRequest, request, _dp, _du)
         
+@router.post("/api/embeddings/compute")
+async def extras_embeddings(
+    request: ExtrasRequestEmbeddings,
+    http_request: Request,
+    payload: ExtrasRequestEmbeddings = Body(...),
+    _dp = Depends(custom_verify_password),
+    _du = Depends(verify_user_agent),
+):
+    model = payload.model or 'gemini-embedding-001'
+    dimension = max(min(payload.dimension, 3072), 128)
+    
+

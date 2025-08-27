@@ -34,28 +34,34 @@ class GeminiResponseWrapper:
         self._json_dumps = json.dumps(self._data, indent=4, ensure_ascii=False)
         self._model = "gemini"
         self._files = self._extract_file()
+        self._embedding = self._extract_embedding()
     
     @property
-    def _parts(self) -> list[dict]:
-        return self._data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+    def parts(self) -> list[dict]:
+        results = []
+        for candidate in self.candidates:
+            if parts := candidate.get('content', {}).get('parts', []):
+                results.extend(parts)
+        return results
     
     @property
-    def _candidates(self) -> list[dict]:
+    def candidates(self) -> list[dict]:
         return self._data.get('candidates', [])
 
     def _extract_thoughts(self) -> Optional[str]:
         try:
-            for part in self._data['candidates'][0]['content']['parts']:
+            thoughts = ""
+            for part in self.parts:
                 if 'thought' in part:
-                    return part['text']
-            return ""
+                    thoughts += part['text']
+            return thoughts
         except (KeyError, IndexError):
             return ""
 
     def _extract_text(self) -> str:
         try:
             text=""
-            for part in self._data['candidates'][0]['content']['parts']:
+            for part in self.parts:
                 if 'thought' not in part and 'text' in part:
                     text += part['text']
             return text
@@ -64,11 +70,10 @@ class GeminiResponseWrapper:
 
     def _extract_function_call(self) -> Optional[Dict[str, Any]]:
         try:
-            parts = self._data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
             # 使用列表推导式查找所有包含 'functionCall' 的 part，并提取其值
             function_calls = [
                 part['functionCall']
-                for part in parts
+                for part in self.parts
                 if isinstance(part, dict) and 'functionCall' in part 
             ]
             # 如果列表不为空，则返回列表；否则返回 None
@@ -77,10 +82,9 @@ class GeminiResponseWrapper:
             return None
 
     def _extract_finish_reason(self) -> Optional[str]:
-        try:
-            return self._data['candidates'][0].get('finishReason')
-        except (KeyError, IndexError):
-            return None
+        if candidates := self.candidates:
+            return candidates[0].get('finishReason')
+        return None
 
     def _extract_prompt_token_count(self) -> Optional[int]:
         try:
@@ -102,7 +106,7 @@ class GeminiResponseWrapper:
     
     def _extract_file(self):
         results = []
-        for part in self._parts:
+        for part in self.parts:
             if inlineData := part.get('inlineData', {}):
                 results.append({
                     'type': 'base64',
@@ -117,6 +121,9 @@ class GeminiResponseWrapper:
                 })
         
         return results
+    
+    def _extract_embedding(self) -> list[float] | None:
+        return self._data.get('embedding', {}).get('values', None)
 
     def set_model(self,model) -> Optional[str]:
         self._model = model
@@ -164,7 +171,10 @@ class GeminiResponseWrapper:
     @property
     def files(self) -> Optional[Dict[str, Any]]:
         return self._files
-
+    
+    @property
+    def embedding(self) -> Optional[list[float]]:
+        return self._embedding
 
 class GeminiClient:
 
@@ -208,7 +218,17 @@ class GeminiClient:
 
     
     def _convert_openAI_request(self, request: ChatCompletionRequest, contents, safety_settings, system_instruction):
-        
+        modal = [
+            "TEXT"
+        ]
+
+        if "image" in request.model:
+            modal.append("IMAGE")
+        if "audio" in request.model or "live" in request.model:
+            modal.append("AUDIO")
+        if "tts" in request.model:
+            modal = [ "AUDIO" ]
+
         config_params = {
             "temperature": request.temperature,
             "maxOutputTokens": request.max_tokens,
@@ -216,6 +236,7 @@ class GeminiClient:
             "topK": request.top_k,
             "stopSequences": request.stop if isinstance(request.stop, list) else [request.stop] if request.stop is not None else None,
             "candidateCount": request.n,
+            "responseModalities": modal,
         }
         if request.thinking_budget:
             config_params["thinkingConfig"] = {
@@ -354,6 +375,25 @@ class GeminiClient:
         api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
         
         url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={self.api_key}"
+        headers = {
+            "Content-Type": "application/json",
+        }
+        
+        try:
+            async with httpx.AsyncClient(proxy=settings.API_PROXY) as client:
+                response = await client.post(url, headers=headers, json=data, timeout=600)
+                if response.status_code != 200:
+                    log('ERROR', f"{response.json().get('error', {}).get('message')}")
+                response.raise_for_status() # 检查 HTTP 错误状态
+            
+            return GeminiResponseWrapper(response.json())
+        except Exception as e:
+            raise
+    
+    async def embed_content(self, request, contents, safety_settings, system_instruction):
+        api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={self.api_key}"
         headers = {
             "Content-Type": "application/json",
         }
