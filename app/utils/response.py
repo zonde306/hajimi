@@ -115,6 +115,12 @@ def openAI_from_Gemini(response, stream=True):
         # 处理普通文本响应
         content_chunk = { "role": "assistant", "content": response.text }
     
+    if response.files:
+        if not content_chunk:
+            content_chunk = { "role": "assistant", "content": '' }
+        for file in response.files:
+            content_chunk['content'] += f'\n<img src="{file.data}" />'
+    
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
         formatted_chunk["object"] = "chat.completion.chunk"

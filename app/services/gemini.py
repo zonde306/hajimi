@@ -33,6 +33,15 @@ class GeminiResponseWrapper:
         self._function_call = self._extract_function_call()
         self._json_dumps = json.dumps(self._data, indent=4, ensure_ascii=False)
         self._model = "gemini"
+        self._files = self._extract_file()
+    
+    @property
+    def _parts(self) -> list[dict]:
+        return self._data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+    
+    @property
+    def _candidates(self) -> list[dict]:
+        return self._data.get('candidates', [])
 
     def _extract_thoughts(self) -> Optional[str]:
         try:
@@ -90,6 +99,24 @@ class GeminiResponseWrapper:
             return self._data['usageMetadata'].get('totalTokenCount')
         except (KeyError):
             return None
+    
+    def _extract_file(self):
+        results = []
+        for part in self._parts:
+            if inlineData := part.get('inlineData', {}):
+                results.append({
+                    'type': 'base64',
+                    'mime': inlineData.get('mimeType'),
+                    'data': f"data:{inlineData.get('mimeType', '')};base64,{inlineData.get('data', '')}"
+                })
+            if fileData := part.get('fileData', {}):
+                results.append({
+                    'type': 'url',
+                    'mime': fileData.get('mimeType'),
+                    'data': fileData.get('fileUri'),
+                })
+        
+        return results
 
     def set_model(self,model) -> Optional[str]:
         self._model = model
@@ -133,6 +160,10 @@ class GeminiResponseWrapper:
     @property
     def function_call(self) -> Optional[Dict[str, Any]]:
         return self._function_call
+    
+    @property
+    def files(self) -> Optional[Dict[str, Any]]:
+        return self._files
 
 
 class GeminiClient:
