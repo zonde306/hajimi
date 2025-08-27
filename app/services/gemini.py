@@ -235,7 +235,7 @@ class GeminiClient:
             "topP": request.top_p,
             "topK": request.top_k,
             "stopSequences": request.stop if isinstance(request.stop, list) else [request.stop] if request.stop is not None else None,
-            "candidateCount": request.n,
+            "candidateCount": 1,
             "responseModalities": modal,
         }
         if request.thinking_budget:
