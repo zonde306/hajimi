@@ -24,13 +24,13 @@ class GeneratedText:
 class GeminiResponseWrapper:
     def __init__(self, data: Dict[Any, Any]):  
         self._data = data
-        self._text = self._extract_text()
+        self._texts = self._extract_text()
         self._finish_reason = self._extract_finish_reason()
         self._prompt_token_count = self._extract_prompt_token_count()
         self._candidates_token_count = self._extract_candidates_token_count()
         self._total_token_count = self._extract_total_token_count()
         self._thoughts = self._extract_thoughts()
-        self._function_call = self._extract_function_call()
+        self._function_calls = self._extract_function_call()
         self._json_dumps = json.dumps(self._data, indent=4, ensure_ascii=False)
         self._model = "gemini"
         self._files = self._extract_file()
@@ -48,33 +48,32 @@ class GeminiResponseWrapper:
     def candidates(self) -> list[dict]:
         return self._data.get('candidates', [])
 
-    def _extract_thoughts(self) -> Optional[str]:
+    def _extract_thoughts(self) -> list[str]:
         try:
-            thoughts = ""
+            thoughts = []
             for part in self.parts:
-                if 'thought' in part:
-                    thoughts += part['text']
+                if 'thought' in part and part['thought']:
+                    thoughts.append(part['text'])
             return thoughts
         except (KeyError, IndexError):
             return ""
 
-    def _extract_text(self) -> str:
+    def _extract_text(self) -> list[str]:
         try:
-            text=""
+            text = []
             for part in self.parts:
                 if 'thought' not in part and 'text' in part:
-                    text += part['text']
+                    text.append(part['text'])
             return text
         except (KeyError, IndexError):
             return ""
 
-    def _extract_function_call(self) -> Optional[Dict[str, Any]]:
+    def _extract_function_call(self) -> list[Dict[str, Any]]:
         try:
             # 使用列表推导式查找所有包含 'functionCall' 的 part，并提取其值
             function_calls = [
                 part['functionCall']
-                for part in self.parts
-                if isinstance(part, dict) and 'functionCall' in part 
+                for part in self.parts if 'functionCall' in part 
             ]
             # 如果列表不为空，则返回列表；否则返回 None
             return function_calls if function_calls else None
@@ -134,7 +133,19 @@ class GeminiResponseWrapper:
 
     @property
     def text(self) -> str:
-        return self._text
+        return self._texts[0] if self._texts else ''
+    
+    @property
+    def texts(self) -> str:
+        return self._texts
+    
+    @property
+    def thought(self) -> str:
+        return self._thoughts[0] if self._thoughts else ''
+    
+    @property
+    def thoughts(self) -> str:
+        return self._thoughts
 
     @property
     def finish_reason(self) -> Optional[str]:
@@ -153,10 +164,6 @@ class GeminiResponseWrapper:
         return self._total_token_count
 
     @property
-    def thoughts(self) -> Optional[str]:
-        return self._thoughts
-
-    @property
     def json_dumps(self) -> str:
         return self._json_dumps
 
@@ -165,8 +172,8 @@ class GeminiResponseWrapper:
         return self._model
 
     @property
-    def function_call(self) -> Optional[Dict[str, Any]]:
-        return self._function_call
+    def function_call(self) -> list[Dict[str, Any]]:
+        return self._function_calls
     
     @property
     def files(self) -> Optional[Dict[str, Any]]:
@@ -400,8 +407,13 @@ class GeminiClient:
         except Exception as e:
             raise
     
-    async def embed_content(self, request, contents, safety_settings, system_instruction):
-        api_version, model, data = self._convert_request_data(request, contents, safety_settings, system_instruction)
+    async def embed_content(self, request):
+        data = {
+            "model": request["model"],
+            "embedding_config": {
+                "task_type": "",
+            }
+        }
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={self.api_key}"
         headers = {

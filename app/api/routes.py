@@ -1,9 +1,9 @@
 import json
 from typing import Optional, Union
-from fastapi import APIRouter, Body, HTTPException, Path, Query, Request, Depends, status, Header
+from fastapi import APIRouter, Body, HTTPException, Path, Query, Request, Depends, status
 from fastapi.responses import StreamingResponse
 from app.services import GeminiClient
-from app.utils import protect_from_abuse,generate_cache_key,openAI_from_text,log
+from app.utils import protect_from_abuse,generate_cache_key,log
 from app.utils.response import openAI_from_Gemini
 from app.utils.auth import custom_verify_password
 from .stream_handlers import process_stream_request
@@ -13,6 +13,7 @@ import app.config.settings as settings
 import asyncio
 from app.vertex.routes import chat_api, models_api
 from app.vertex.models import OpenAIRequest, OpenAIMessage
+from .embedding import process_embedding_request
 
 # 创建路由器
 router = APIRouter()
@@ -323,8 +324,6 @@ async def gemini_chat_completions(
         
 @router.post("/api/embeddings/compute")
 async def extras_embeddings(
-    request: ExtrasRequestEmbeddings,
-    http_request: Request,
     payload: ExtrasRequestEmbeddings = Body(...),
     _dp = Depends(custom_verify_password),
     _du = Depends(verify_user_agent),
@@ -332,4 +331,3 @@ async def extras_embeddings(
     model = payload.model or 'gemini-embedding-001'
     dimension = max(min(payload.dimension, 3072), 128)
     
-

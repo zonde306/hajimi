@@ -88,8 +88,6 @@ async def process_request(
     max_concurrent_requests = max(round(settings.MAX_CONCURRENT_REQUESTS / getattr(chat_request, "n", 1)), 1)
 
     async def generate(idx: int):
-        global current_api_key
-
         # 设置初始并发数
         current_concurrent = settings.CONCURRENT_REQUESTS
         

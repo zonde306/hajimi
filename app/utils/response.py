@@ -74,7 +74,7 @@ def openAI_from_Gemini(response, stream=True):
         "id": chunk_id,
         "created": now_time,
         "model": response.model,
-        "choices": [{"index": 0 , "finish_reason": response.finish_reason}] 
+        "choices": [{"index": 0 , "finish_reason": response.finish_reason}],
     }
 
     # 准备 usage 数据，处理属性缺失或为 None 的情况
@@ -130,6 +130,9 @@ def openAI_from_Gemini(response, stream=True):
             else:
                 log('error', f"响应未知文件类型: {file['mime']}")
     
+    if response.thought and content_chunk.get('content', None):
+        content_chunk['content'] = f'<think>{response.thought}</think>\n\n{content_chunk["content"]}'
+
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
         formatted_chunk["object"] = "chat.completion.chunk"
@@ -137,7 +140,6 @@ def openAI_from_Gemini(response, stream=True):
         if response.finish_reason:
             formatted_chunk["usage"] = usage_data
         return f"data: {json.dumps(formatted_chunk, ensure_ascii=False)}\n\n"
-    
     else:
         formatted_chunk["choices"][0]["message"] = content_chunk
         formatted_chunk["object"] = "chat.completion"
