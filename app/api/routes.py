@@ -13,7 +13,6 @@ import app.config.settings as settings
 import asyncio
 from app.vertex.routes import chat_api, models_api
 from app.vertex.models import OpenAIRequest, OpenAIMessage
-from .embedding import process_embedding_request
 
 # 创建路由器
 router = APIRouter()
