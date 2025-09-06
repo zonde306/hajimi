@@ -8,7 +8,7 @@ async def custom_verify_password(
     authorization: Optional[str] = Header(None, description="OpenAI 格式请求 Key, 格式: Bearer sk-xxxx"),
     x_goog_api_key: Optional[str] = Header(None, description="Gemini 格式请求 Key, 从请求头 x-goog-api-key 获取"),
     key: Optional[str] = Query(None, description="Gemini 格式请求 Key, 从查询参数 key 获取"),
-    password: Optional[str] = Path(None, description="密码, 从路径参数 password 获取")
+    password: Optional[str] = Path(description="密码, 从路径参数 password 获取")
 ):
     """
     校验 API Key。
