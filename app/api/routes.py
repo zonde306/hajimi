@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from app.services import GeminiClient
 from app.utils import protect_from_abuse,generate_cache_key,log
 from app.utils.response import openAI_from_Gemini
-from app.utils.auth import custom_verify_password
+from app.utils.auth import custom_verify_password, verify_user_agent
 from .stream_handlers import process_stream_request
 from .nonstream_handlers import process_request
 from app.models.schemas import ChatCompletionRequest, ChatCompletionResponse, ModelList, AIRequest, ChatRequestGemini, ExtrasRequestEmbeddings, ExtrasResponseEmbeddings
@@ -61,12 +61,6 @@ def init_router(
     MAX_REQUESTS_PER_MINUTE = _max_requests_per_minute
     MAX_REQUESTS_PER_DAY_PER_IP = _max_requests_per_day_per_ip
 
-async def verify_user_agent(request: Request):
-    if not settings.WHITELIST_USER_AGENT:
-        return
-    if request.headers.get("User-Agent") not in settings.WHITELIST_USER_AGENT:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed client")
-
 # todo : 添加 gemini 支持(流式返回)
 async def get_cache(cache_key,is_stream: bool,is_gemini=False):
     # 检查缓存是否存在，如果存在，返回缓存
@@ -93,6 +87,7 @@ async def get_cache(cache_key,is_stream: bool,is_gemini=False):
     return None
 
 @router.get("/aistudio/models",response_model=ModelList)
+@router.get("/{password:str}/aistudio/models",response_model=ModelList)
 async def aistudio_list_models(_ = Depends(custom_verify_password),
                                _2 = Depends(verify_user_agent)):
     if settings.WHITELIST_MODELS:
@@ -102,6 +97,7 @@ async def aistudio_list_models(_ = Depends(custom_verify_password),
     return ModelList(data=[{"id": model, "object": "model", "created": 1678888888, "owned_by": "organization-owner"} for model in filtered_models])
 
 @router.get("/vertex/models",response_model=ModelList)
+@router.get("{password:str}/vertex/models",response_model=ModelList)
 async def vertex_list_models(request: Request, 
                              _ = Depends(custom_verify_password),
                              _2 = Depends(verify_user_agent)):
@@ -109,8 +105,10 @@ async def vertex_list_models(request: Request,
     return await models_api.list_models(request, current_api_key)
 
 # API路由
-@router.get("/v1/models",response_model=ModelList)
-@router.get("/models",response_model=ModelList)
+@router.get("/v1/models", response_model=ModelList)
+@router.get("/{password:str}/v1/models", response_model=ModelList)
+@router.get("/models", response_model=ModelList)
+@router.get("/{password:str}/models", response_model=ModelList)
 async def list_models(request: Request,
                       _ = Depends(custom_verify_password),
                       _2 = Depends(verify_user_agent)):
@@ -119,6 +117,7 @@ async def list_models(request: Request,
     return await aistudio_list_models(_, _2)
 
 @router.post("/aistudio/chat/completions", response_model=ChatCompletionResponse)
+@router.post("{password:str}/aistudio/chat/completions", response_model=ChatCompletionResponse)
 async def aistudio_chat_completions(
     request: Union[ChatCompletionRequest, AIRequest],
     http_request: Request,
@@ -246,6 +245,7 @@ async def aistudio_chat_completions(
         raise HTTPException(status_code=500, detail=f" hajimi 服务器内部处理时发生错误\n具体原因:{e}")
 
 @router.post("/vertex/chat/completions", response_model=ChatCompletionResponse)
+@router.post("/{password:str}/vertex/chat/completions", response_model=ChatCompletionResponse)
 async def vertex_chat_completions(
     request: ChatCompletionRequest, 
     http_request: Request,
@@ -284,7 +284,9 @@ async def vertex_chat_completions(
     return await chat_api.chat_completions(http_request, vertex_request, current_api_key)
 
 @router.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+@router.post("/{password:str}/v1/chat/completions", response_model=ChatCompletionResponse)
 @router.post("/chat/completions", response_model=ChatCompletionResponse)
+@router.post("/{password:str}/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(
     request: ChatCompletionRequest,
     http_request: Request,
@@ -297,6 +299,7 @@ async def chat_completions(
     return await aistudio_chat_completions(request, http_request, _dp, _du)
 
 @router.post("/gemini/{api_version:str}/models/{model_and_responseType:path}")
+@router.post("/{password:str}/gemini/{api_version:str}/models/{model_and_responseType:path}")
 async def gemini_chat_completions(
     request: Request,
     model_and_responseType: str = Path(...),
@@ -320,8 +323,9 @@ async def gemini_chat_completions(
         payload.contents = [ payload.contents ]
     geminiRequest = AIRequest(payload=payload,model=model_name,stream=is_stream,format_type='gemini')
     return await aistudio_chat_completions(geminiRequest, request, _dp, _du)
-        
+
 @router.post("/api/embeddings/compute")
+@router.post("/{password:str}/api/embeddings/compute")
 async def extras_embeddings(
     payload: ExtrasRequestEmbeddings = Body(...),
     _dp = Depends(custom_verify_password),
@@ -329,4 +333,4 @@ async def extras_embeddings(
 ):
     model = payload.model or 'gemini-embedding-001'
     dimension = max(min(payload.dimension, 3072), 128)
-    
+    return HTTPException(status_code=503, detail="Not Implemented yet")
