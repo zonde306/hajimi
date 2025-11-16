@@ -13,12 +13,18 @@ class APIKeyManager:
     def __init__(self):
         self.api_keys = re.findall(
             r"AIzaSy[a-zA-Z0-9_-]{33}", settings.GEMINI_API_KEYS)
+
         # 加载更多 GEMINI_API_KEYS
         for i in range(1, 99):
             if keys := os.environ.get(f"GEMINI_API_KEYS_{i}", ""):
                 self.api_keys += re.findall(r"AIzaSy[a-zA-Z0-9_-]{33}", keys)
             else:
                 break
+        
+        if settings.GEMINI_API_KEYS_FILE:
+            if os.path.exists(settings.GEMINI_API_KEYS_FILE):
+                with open(settings.GEMINI_API_KEYS_FILE, "r", encoding="utf-8") as f:
+                    self.api_keys += re.findall(r"AIzaSy[a-zA-Z0-9_-]{33}", f.read())
 
         self.key_stack = [] # 初始化密钥栈
         self._reset_key_stack() # 初始化时创建随机密钥栈

@@ -2,6 +2,8 @@ import os
 import pathlib
 import logging
 import asyncio 
+
+GEMINI_API_KEYS_FILE = os.environ.get("GEMINI_API_KEYS_FILE", "")
 GEMINI_API_KEYS = os.environ.get("GEMINI_API_KEYS", "")
 #失效的API密钥
 INVALID_API_KEYS = os.environ.get("INVALID_API_KEYS", "")
