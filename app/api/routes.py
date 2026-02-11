@@ -452,20 +452,24 @@ async def create_embedding(
     )
 
     assert key_manager is not None
-    api_key = await key_manager.get_available_key()
 
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized: No available API keys",
-        )
+    last_error = None
+    for attempt in range(settings.MAX_RETRY_NUM):
+        api_key = await key_manager.get_available_key()
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Unauthorized: No available API keys",
+            )
 
-    client = EmbeddingClient(api_key)
-    try:
-        return await client.create_embeddings(request)
-    except Exception as e:
-        log("ERROR", f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+        try:
+            client = EmbeddingClient(api_key)
+            return await client.create_embeddings(request)
+        except Exception as e:
+            log("ERROR", f"An unexpected error occurred {e} at attempt {attempt}")
+            last_error = e
+    
+    raise HTTPException(status_code=500, detail=f"An unexpected error occurred {last_error} at attempt {attempt}")
 
 
 @router.post("/api/vector/query")
