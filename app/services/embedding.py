@@ -44,7 +44,7 @@ class EmbeddingClient:
             response.raise_for_status()
             
             response_json = response.json()
-            log("INFO", f"Google AI API response: {response_json}")
+            # log("DEBUG", f"Google AI API response: {response_json}")
             
             # The response is a JSON object with an "embeddings" key.
             # Each item in the list is an object with a "values" key.
