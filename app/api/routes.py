@@ -469,7 +469,7 @@ async def create_embedding(
             log("ERROR", f"An unexpected error occurred {e} at attempt {attempt}")
             last_error = e
     
-    raise HTTPException(status_code=500, detail=f"An unexpected error occurred {last_error} at attempt {attempt}")
+    raise HTTPException(status_code=503, detail=f"An unexpected error occurred {last_error} at attempt {attempt}")
 
 
 @router.post("/api/vector/query")

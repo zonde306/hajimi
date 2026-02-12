@@ -41,9 +41,11 @@ class EmbeddingClient:
 
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=data, timeout=60)
-            response.raise_for_status()
-            
             response_json = response.json()
+            if response.status_code != 200:
+                log("ERROR", f"Google AI API error: {response_json}", extra=extra_log)
+                raise Exception(f"Google AI API error: {response_json}")
+            
             # log("DEBUG", f"Google AI API response: {response_json}")
             
             # The response is a JSON object with an "embeddings" key.
