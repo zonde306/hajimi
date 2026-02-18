@@ -1,3 +1,4 @@
+import base64
 import httpx
 from typing import List, Union
 from app.models.schemas import EmbeddingRequest, EmbeddingData, EmbeddingResponse, Usage
@@ -28,7 +29,8 @@ class EmbeddingClient:
                     "model": f"models/{model_name}",
                     "content": {
                         "parts": [{"text": text}]
-                    }
+                    },
+                    "outputDimensionality": request.dimensions or 3072,
                 } for text in inputs
             ]
         }
@@ -41,7 +43,7 @@ class EmbeddingClient:
 
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=data, timeout=60)
-            response_json = response.json()
+            response_json : dict = response.json()
             if response.status_code != 200:
                 log("ERROR", f"Google AI API error: {response_json}", extra=extra_log)
                 raise Exception(f"Google AI API error: {response_json}")
@@ -51,6 +53,9 @@ class EmbeddingClient:
             # The response is a JSON object with an "embeddings" key.
             # Each item in the list is an object with a "values" key.
             embeddings = response_json.get("embeddings", [])
+            if request.encoding_format == "base64":
+                # convert list[float] to base64 list[str]
+                embeddings = [{ "values": base64.b64encode(item["values"]).decode("utf-8") } for item in embeddings ]
 
             embedding_data = [
                 EmbeddingData(embedding=item["values"], index=i)

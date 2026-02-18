@@ -114,13 +114,18 @@ class ChatResponseGemini(BaseModel):
 
 class EmbeddingRequest(BaseModel):
     input: Union[str, List[str]]
-    model: str
-    encoding_format: Optional[str] = "float"
+    model: str = "gemini-embedding-001"
+    encoding_format: Optional[Literal["float", "base64"]] = "float"
+    dimensions: Optional[int] = 3072
+    """
+    Flexible, supports: 128 - 3072
+    Recommended: 768, 1536, 3072
+    """
 
 
 class EmbeddingData(BaseModel):
     object: str = "embedding"
-    embedding: List[float]
+    embedding: List[float] | str
     index: int
 
 
