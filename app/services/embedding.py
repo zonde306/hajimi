@@ -1,4 +1,5 @@
 import base64
+import struct
 import httpx
 from typing import List, Union
 from app.models.schemas import EmbeddingRequest, EmbeddingData, EmbeddingResponse, Usage
@@ -54,8 +55,11 @@ class EmbeddingClient:
             # Each item in the list is an object with a "values" key.
             embeddings = response_json.get("embeddings", [])
             if request.encoding_format == "base64":
+                def pack_and_encode(vals: list[float]) -> str:
+                    # '<' = little-endian, 'f' = float32
+                    return base64.b64encode(struct.pack(f'<{len(vals)}f', *vals)).decode("utf-8")
                 # convert list[float] to base64 list[str]
-                embeddings = [{ "values": base64.b64encode(item["values"]).decode("utf-8") } for item in embeddings ]
+                embeddings = [{ "values": pack_and_encode(item["values"]) } for item in embeddings ]
 
             embedding_data = [
                 EmbeddingData(embedding=item["values"], index=i)
