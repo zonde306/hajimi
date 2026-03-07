@@ -461,10 +461,11 @@ async def process_request(
             else:
                 return openAI_from_text(
                     model=chat_request.model,
-                    content="空响应次数达到上限\n请修改输入提示词",
+                    content="",
                     finish_reason="stop",
                     stream=False,
                     role="error",
+                    error="空响应次数达到上限\n请修改输入提示词",
                 )
 
     # 如果所有尝试都失败
@@ -483,10 +484,11 @@ async def process_request(
     else:
         return openAI_from_text(
             model=chat_request.model,
-            content="所有API密钥均请求失败\n具体错误请查看轮询日志",
+            content="",
             finish_reason="stop",
             stream=False,
             role="error",
+            error="所有API密钥均请求失败\n具体错误请查看轮询日志",
         )
 
     # raise HTTPException(status_code=500, detail=f"API key 替换失败，所有API key都已尝试，请重新配置或稍后重试")
@@ -730,10 +732,11 @@ async def process_nonstream_with_keepalive_stream(
                     else:
                         error_response = openAI_from_text(
                             model=chat_request.model,
-                            content="空响应次数达到上限\n请修改输入提示词",
+                            content="",
                             finish_reason="stop",
                             stream=False,
                             role="error",
+                            error="空响应次数达到上限\n请修改输入提示词",
                         )
 
                     yield json.dumps(error_response, ensure_ascii=False)
@@ -755,10 +758,11 @@ async def process_nonstream_with_keepalive_stream(
             else:
                 error_response = openAI_from_text(
                     model=chat_request.model,
-                    content="所有API密钥均请求失败\n具体错误请查看轮询日志",
+                    content="",
                     finish_reason="stop",
                     stream=False,
                     role="error",
+                    error="所有API密钥均请求失败\n具体错误请查看轮询日志",
                 )
 
             yield json.dumps(error_response, ensure_ascii=False)

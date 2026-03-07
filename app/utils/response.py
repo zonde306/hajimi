@@ -9,6 +9,7 @@ def openAI_from_text(
     total_token_count=0,
     stream=True,
     role="assistant",
+    error=None,
 ):
     """
     根据传入参数，创建 OpenAI 标准响应对象块
@@ -28,6 +29,9 @@ def openAI_from_text(
 
     if finish_reason:
         formatted_chunk["usage"] = {"total_tokens": total_token_count}
+    
+    if error:
+        formatted_chunk["error"] = { "message": error }
 
     if stream:
         formatted_chunk["choices"][0]["delta"] = content_chunk
